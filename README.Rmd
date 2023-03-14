@@ -1,0 +1,106 @@
+---
+title: "emr-cluster package"
+
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  error = T
+)
+options(tibble.print_min = 4L, tibble.print_max = 4L, knitr.kable.NA = '')
+```
+
+## Development version
+```{r , warning=FALSE,message = FALSE}
+# install.packages("remotes")
+#remotes::install_github("DHLab-TSENG/emr_clust")
+```
+
+## Useage
+
+The goal of TEST is to unsupervised machine learning analysis process integration (including feature selection, dimension reduction, group analysis, visualization of group results, etc.)
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r example, echo=TRUE, warning=FALSE,message = FALSE}
+
+library(TEST)
+library(FactoMineR)
+library(tidyverse)
+library(reshape2)
+library(data.table)
+library(knitr)
+## basic example code
+
+#for categorical dataset with combine dimention reduction & clustering method example
+data(tea)
+# I. Data doing feature selection + dimention reduction + clustering with result presentation for distribution of variables
+emr_cat<-emr_clust(tea[,1:13],
+                   method =c("MCAk"),
+                   kmoCutoff = 0.5,
+                   nclus=c(4:5),
+                   ndim=c(2:3),
+                   group="Tea",
+                   nstart=50)
+#show the tuning output table
+kable(head(emr_cat$clust_out$tune_table),"html")
+#show the statistic table
+kable(head(emr_cat$statistics_table$PC_data),"html")
+kable(head(emr_cat$statistics_table$attr_data),"html")
+kable(head(emr_cat$statistics_table$use_table),"html")
+#Biplot of the first and second principal components
+emr_cat$biplot$clustering_biplots
+#Profile the number and proportion of case in each cluster
+emr_cat$biplot$profile_by_cluster_integrated
+#Profile the number and proportion of case in each group
+emr_cat$biplot$profile_by_group_integrated
+# II. Visualization
+#  1. Wind_rose_plot
+pic<-wind_rose_plot(clustering_output = emr_cat, plot_value = "Not" )
+pic$overlapped
+pic$seperated
+#  2. Sensitivity + Specificity plot
+sen_spe_out<-sen_spe(clustering_output = emr_cat)
+sen_spe_out
+
+#for numerical dataset with seperate dimention reduction & clustering method example
+data(iris)
+
+# I. Data feature selection + dimention reduction + clustering with result presentation for distribution of variables
+emr_numeric<-emr_clust(iris,
+                       method =c("PCA","Kmean"),
+                       center = TRUE,
+                       scale = TRUE,
+                       kmoCutoff = 0.5,
+                       nclus=c(4:5),
+                       ndim=c(2:3),
+                       group="Species",
+                       attr.params=list( fill="blue", color="darkred"),
+                       text.params=list(alpha = 0.9))
+
+#show the tuning output table
+kable(head(emr_numeric$clust_out$tune_table),"html")
+#show the statistic table
+kable(head(emr_numeric$statistics_table$PC_data),"html")
+kable(head(emr_numeric$statistics_table$attr_data),"html")
+kable(head(emr_numeric$statistics_table$use_table),"html")
+#Biplot of the first and second principal components
+emr_numeric$biplot$clustering_biplots
+#Profile the number and proportion of case in each cluster
+emr_numeric$biplot$profile_by_cluster_integrated
+#Profile the number and proportion of case in each group
+emr_numeric$biplot$profile_by_group_integrated
+
+
+```
+
+You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
+
+In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.

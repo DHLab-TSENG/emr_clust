@@ -1,0 +1,262 @@
+---
+title: "Getting started with emr_clust"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with emr_clust}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Description
+
+The goal of `emr_clust` is to unsupervised machine learning analysis process integration (including feature selection, dimension reduction, group analysis, visualization of group results, etc.)
+
+In this part, the instruction of how emr_clust package works with clustering dataset is provide, at the same time, the demonstration of different results under different analytical methods using categorical data, as well as the showcase of the extensive applicability of the package through the use of different continuous dataset.
+
+The visualization part `wind_rose_plot`、`sen_spe`, is currently only applicable to categorical data.
+
+```{r , echo = FALSE, message = FALSE}
+
+library(TEST)
+library(FactoMineR)
+library(tidyverse)
+library(reshape2)
+library(data.table)
+library(knitr)
+library(mlbench)
+```
+
+```{r setup, echo = FALSE, message = FALSE}
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%",
+  error = T
+)
+
+options(tibble.print_min = 4L, tibble.print_max = 4L, knitr.kable.NA = '',rmarkdown.html_vignette.check_title = FALSE)
+
+```
+
+### Data Format
+
+To execute functions in emr_clust, the data input should be a data frame object in R, and contain at least one cluster coloumn.
+
+Also, if inputting categorical dataset make sure it has already been converted into Binary factor datasets.
+
+## I.Clustering analysis
+
+A. Data doing feature selection + dimention reduction + clustering with result presentation for distribution of variables
+
+### A. Categorical dataset
+The demonstration of different results under different analytical methods using categorical data
+
+In this example, we using dataset `tea` with combined method `iFCB`(Iterative Factorial Clustering of Binary variables).
+
+Also, Cluster quality assessment based on the `Callinski-Harabasz index` in the `low` dimensional space.
+
+```{r, message = FALSE , warning = TRUE }
+data(tea)
+emr_iFCB<-emr_clust(tea[,1:13],
+                   method = c("iFCB"),
+                   kmoCutoff = 0.5,
+                   nclus = c(4:5),
+                   ndim = c(2:3),
+                   group = "Tea",
+                   nstart = 50,
+                   criterion = "ch",
+                   dst = "low")
+```
+
+The results are:
+```{r example, echo=TRUE, warning=FALSE,message = FALSE}
+#show the tuning output table
+knitr::kable(head(emr_iFCB$clust_out$tune_table),"html")
+#show the statistic table
+knitr::kable(head(emr_iFCB$statistics_table$PC_data),"html")
+knitr::kable(head(emr_iFCB$statistics_table$attr_data),"html")
+knitr::kable(head(emr_iFCB$statistics_table$use_table),"html")
+```
+
+In this example, also using dataset `tea` but with separate method `MCA`(Multiple correspondence analysis) + `Kmedoid`.
+
+Cluster quality assessment based on the `Callinski-Harabasz index`.
+
+```{r, message = F, warning = TRUE,include=FALSE}
+data(tea)
+
+emr_MCA<-emr_clust(tea[,1:13],
+                   method = c("MCA","Kmedoid"),
+                   kmoCutoff = 0.5,
+                   nclus = c(4:5),
+                   ndim = c(2:3),
+                   group = "Tea",
+                   nstart = 50)
+```
+
+Then compare using different methods results:
+
+iFCB
+```{r , echo=TRUE, warning=FALSE,message = FALSE}
+#Biplot of the first and second principal components
+emr_iFCB$biplot$clustering_biplots[[1]]
+#Profile the number and proportion of case in each cluster
+emr_iFCB$biplot$profile_by_cluster_integrated
+#Profile the number and proportion of case in each group
+emr_iFCB$biplot$profile_by_group_integrated
+```
+
+MCA + Kmedoid
+```{r , echo=TRUE, warning=FALSE,message = FALSE}
+#Biplot of the first and second principal components
+emr_MCA$biplot$clustering_biplots[[1]]
+#Profile the number and proportion of case in each cluster
+emr_MCA$biplot$profile_by_cluster_integrated
+#Profile the number and proportion of case in each group
+emr_MCA$biplot$profile_by_group_integrated
+```
+
+
+### B. Numerical dataset
+
+In this section, we will show the extensive applicability of the package by using different numerical dataset
+
+In this example, we using dataset `iris` with combined method `FKM`(factorial K-means).
+
+
+```{r, message = TRUE, warning = TRUE}
+
+emr_iris<-emr_clust(iris,
+                    method = c("FKM"),
+                    kmoCutoff = 0.5,
+                    nclus = c(4:5),
+                    ndim = c(2:3),
+                    group = "Species",
+                    nstart = 50)
+```
+
+The results are:
+
+```{r , echo=TRUE, warning=FALSE,message = FALSE}
+#show the tuning output table
+knitr::kable(head(emr_iris$clust_out$tune_table),"html")
+#show the statistic table
+knitr::kable(head(emr_iris$statistics_table$PC_data),"html")
+knitr::kable(head(emr_iris$statistics_table$attr_data),"html")
+knitr::kable(head(emr_iris$statistics_table$use_table),"html")
+
+#Biplot of the first and second principal components
+emr_iris$biplot$clustering_biplots[[1]]
+#Profile the number and proportion of case in each cluster
+emr_iris$biplot$profile_by_cluster_integrated
+#Profile the number and proportion of case in each group
+emr_iris$biplot$profile_by_group_integrated
+
+```
+
+In this example, we using dataset PimaIndiansDiabetes with combine method `FKM`.
+
+Also, showing how to modify ggplot parameters in different ways.
+
+```{r, message = TRUE, warning = TRUE}
+data(PimaIndiansDiabetes)
+knitr::kable(head(PimaIndiansDiabetes),"html")
+```
+```{r, message = TRUE, warning = TRUE }
+emr_diabetes<-emr_clust(PimaIndiansDiabetes,
+                    method = c("FKM"),
+                    kmoCutoff = 0.5,
+                    nclus = c(4:5),
+                    ndim = c(2:3),
+                    group = "diabetes",
+                    nstart = 50,
+                    attr.params=list(shape =18, fill="blue", color="darkred"),
+                    text.params=list(alpha = 0.9))
+```
+
+We can see from the results that the shape of the points and the transparency of the text have been changed.:
+
+```{r, echo=TRUE, warning=FALSE,message = FALSE}
+#Biplot of the first and second principal components
+emr_diabetes$biplot$clustering_biplots[[1]]
+```
+
+Also can use `+` to add a new layer
+```{r, echo=TRUE, warning=FALSE,message = FALSE}
+#Profile the number and proportion of case in each cluster
+emr_diabetes$biplot$profile_by_cluster_integrated + coord_flip()
+#Profile the number and proportion of case in each group
+emr_diabetes$biplot$profile_by_group_integrated + labs(title = "profile_by_group_integrated")
+```
+
+## II.Data Visualization
+
+Visualization provides function `emr_clust` clustering output.
+
+Currently only applicable to categorical data.
+
+### A. Wind rose plot
+
+The functions `wind_rose_plot` using wind rose plot to presentation the contribution of each parameter in different clusters.(include overlapped & separated)
+
+But only work on binary categorical dataset.
+
+`iFCB` clustering output visualization
+```{r,  warning = FALSE }
+#Using combined method iFCB
+pic_iFCB <- wind_rose_plot(clustering_output = emr_iFCB , plot_value = "Not" )
+pic_iFCB$overlapped
+pic_iFCB$seperated
+```
+`MCA` + `Kmedoid` clustering output visualization
+```{r,  warning = FALSE }
+#using separate method MCA + Kmedoid
+pic_MCA<-wind_rose_plot(clustering_output = emr_MCA , plot_value = "Not" )
+pic_MCA$overlapped
+pic_MCA$seperated
+
+```
+
+If only want to see specific features.
+
+```{r, message = FALSE, warning = FALSE}
+#setting a vector with specific feature column names
+in_parameters<-names(tea[,1:6])
+
+pic_iFCB<-wind_rose_plot(clustering_output = emr_iFCB , plot_value = "Not" , plot_feature = in_parameters)
+pic_iFCB$overlapped
+pic_iFCB$seperated
+
+```
+
+### B. Sum of sensitivity and specificity
+
+The function `sen_spe` calculate the sum of sensitivity and specificity from true positives, false positives, true negatives and false negatives.
+
+Also, visualize it at the same time.
+
+`iFCB` clustering output sum of sensitivity and specificity
+```{r, message = FALSE, warning = FALSE}
+sen_spe_iFCB<-sen_spe(clustering_output = emr_iFCB)
+sen_spe_iFCB
+knitr::kable(head(sen_spe_iFCB$level),"html")
+```
+`MCA` + `Kmedoid` clustering output sum of sensitivity and specificity
+```{r, message = FALSE, warning = FALSE}
+sen_spe_MCA<-sen_spe(clustering_output = emr_MCA)
+sen_spe_MCA
+knitr::kable(head(sen_spe_MCA$level),"html")
+```
+
+If only want to see specific features.
+
+```{r, message = FALSE, warning = FALSE}
+#setting a vector with specific feature column names
+in_parameters<-names(tea[,1:6])
+
+sen_spe_iFCB<-sen_spe(clustering_output = emr_iFCB , plot_feature = in_parameters)
+sen_spe_iFCB
+knitr::kable(head(sen_spe_iFCB$level),"html")
+```
+
